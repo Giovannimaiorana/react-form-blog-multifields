@@ -1,0 +1,69 @@
+.ContainerForm{
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.StyleForm{
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid black;
+    background-color: rgba(255, 254, 254, 0.9);
+    padding: 50px;
+    border-radius: 30px;
+}
+input{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 10px;
+}
+label{
+    text-align: center;
+}
+.buttonSub{
+    width: 100px;
+    margin: auto;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: lightblue;
+    border-radius: 10px;
+    border: none;
+    color: white;
+}
+.buttonSub:hover{
+    background-color: blue;
+}
+.postStyle{
+    margin-top: 50px;
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid black;
+    background-color: rgba(255, 254, 254, 0.9);
+    padding: 50px;
+    border-radius: 30px;
+}
+.buttonDelete{
+    width: 100px;
+    margin: auto;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: red;
+    border-radius: 10px;
+    border: none;
+    color: white;
+    margin-left: 10px;
+}
+.buttonEdit{
+    width: 100px;
+    margin: auto;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: darkgoldenrod;
+    border-radius: 10px;
+    border: none;
+    color: white;
+}
