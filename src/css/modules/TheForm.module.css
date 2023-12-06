@@ -9,7 +9,6 @@
     width: 400px;
     display: flex;
     flex-direction: column;
-    border: 1px solid black;
     background-color: rgba(255, 254, 254, 0.9);
     padding: 50px;
     border-radius: 30px;
@@ -41,7 +40,7 @@ label{
     width: 400px;
     display: flex;
     flex-direction: column;
-    border: 1px solid black;
+
     background-color: rgba(255, 254, 254, 0.9);
     padding: 50px;
     border-radius: 30px;
@@ -66,4 +65,8 @@ label{
     border-radius: 10px;
     border: none;
     color: white;
+}
+.imgStyle{
+    width: 100%;
+    border-radius: 30px;
 }
