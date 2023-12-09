@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import style from "../css/modules/TheForm.module.css";
 
@@ -11,9 +12,25 @@ export default function TheForm() {
     tags: [],
     isVisible: false,
   });
+  console.log(formData);
 
   const [articles, setArticles] = useState([]);
   const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    // Fetch posts from the ExpressJS backend when the component mounts
+    fetchPosts();
+  }, []); // The empty dependency array ensures that this effect runs only once, similar to componentDidMount
+
+  const fetchPosts = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/posts");
+      console.log("Data from backend:", response.data);
+      setArticles(response.data);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -39,28 +56,41 @@ export default function TheForm() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { title, description, image, category, tags, isVisible } = formData;
 
     if (title.trim() !== "" && description.trim() !== "") {
-      const updatedArticles =
-        editingId !== null
-          ? articles.map((article) =>
-              article.id === editingId ? { ...article, ...formData } : article
-            )
-          : [...articles, { id: uuidv4(), ...formData }];
+      try {
+        const response = await axios({
+          method: editingId !== null ? "put" : "post",
+          url: "http://localhost:3000/posts", // Replace with your actual API endpoint
+          headers: {
+            "Content-Type": "application/json",
+          },
+          data:
+            editingId !== null
+              ? { id: editingId, ...formData }
+              : { id: uuidv4(), ...formData },
+        });
 
-      setArticles(updatedArticles);
-      setEditingId(null);
-      setFormData({
-        title: "",
-        description: "",
-        image: "",
-        category: "",
-        tags: [],
-        isVisible: false,
-      });
+        if (response.status === 200 || response.status === 201) {
+          fetchPosts(); // Refresh the posts after adding/editing
+          setEditingId(null);
+          setFormData({
+            title: "",
+            description: "",
+            image: "",
+            category: "",
+            tags: [],
+            isVisible: false,
+          });
+        } else {
+          console.error("Failed to add/edit post:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error adding/editing post:", error);
+      }
     }
   };
 
@@ -72,8 +102,18 @@ export default function TheForm() {
     }
   };
 
-  const handleDelete = (id) => {
-    setArticles(articles.filter((article) => article.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      const response = await axios.delete(`http://localhost:3000/posts/${id}`); // Replace with your actual API endpoint
+
+      if (response.status === 200) {
+        fetchPosts(); // Refresh the posts after deleting
+      } else {
+        console.error("Failed to delete post:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+    }
   };
 
   return (
@@ -174,36 +214,23 @@ export default function TheForm() {
           {editingId !== null ? "Modifica" : "Aggiungi"}
         </button>
       </form>
-
-      <h1>Post</h1>
       <div className={style.postStyle}>
+        <h1>Articoli dal backend</h1>
         <ul>
-          {articles
-            .filter((article) => article.isVisible)
-            .map((article) => (
-              <li key={article.id}>
-                <h1>{article.title}</h1>
-                <img className={style.imgStyle} src={article.image} alt="" />
-                <p>{article.description}</p>
-                <p>Categoria: {article.category}</p>
-                <p>Tags: {article.tags.join(", ")}</p>
-                <p>Pubblicato: {article.isVisible ? "Sì" : "No"}</p>
-                <div>
-                  <button
-                    className={style.buttonEdit}
-                    onClick={() => handleEdit(article.id)}
-                  >
-                    Modifica
-                  </button>
-                  <button
-                    className={style.buttonDelete}
-                    onClick={() => handleDelete(article.id)}
-                  >
-                    Elimina
-                  </button>
-                </div>
-              </li>
-            ))}
+          {articles.map((article) => (
+            <li key={article.id}>
+              <h2>{article.title}</h2>
+              <img src={article.image} alt={article.title} />
+              <p>{article.content}</p>
+              <p>
+                Tags:{" "}
+                {article.tags.map((tag) => (
+                  <span key={tag.id}>{tag.titleT}, </span>
+                ))}
+              </p>
+              Category: {article.category ? article.category.name : "N/A"}
+            </li>
+          ))}
         </ul>
       </div>
     </div>
