@@ -6,22 +6,26 @@ import style from "../css/modules/TheForm.module.css";
 export default function TheForm() {
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    content: "",
     image: "",
     category: "",
     tags: [],
-    isVisible: false,
+    published: false,
   });
   console.log(formData);
 
   const [articles, setArticles] = useState([]);
+  const [tags, setTags] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    // Fetch posts from the ExpressJS backend when the component mounts
     fetchPosts();
-  }, []); // The empty dependency array ensures that this effect runs only once, similar to componentDidMount
+    fetchTags();
+    fetchCategory();
+  }, []);
 
+  //recupero post dal back
   const fetchPosts = async () => {
     try {
       const response = await axios.get("http://localhost:3000/posts");
@@ -31,9 +35,31 @@ export default function TheForm() {
       console.error("Error fetching posts:", error);
     }
   };
-
+  //recupero tag
+  const fetchTags = async () => {
+    try {
+      const responseTag = await axios.get("http://localhost:3000/tags");
+      console.log("TagsFromBack:", responseTag);
+      setTags(responseTag.data);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    }
+  };
+  //recupero category
+  const fetchCategory = async () => {
+    try {
+      const responseCategories = await axios.get(
+        "http://localhost:3000/categories"
+      );
+      console.log("CategoryFromBack:", responseCategories);
+      setCategories(responseCategories.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prevData) => {
       if (type === "checkbox" && name === "tags") {
         if (checked) {
@@ -44,7 +70,7 @@ export default function TheForm() {
         } else {
           return {
             ...prevData,
-            tags: prevData.tags.filter((tag) => tag !== value),
+            tags: prevData.tags.filter((tagId) => tagId !== value),
           };
         }
       } else {
@@ -55,23 +81,29 @@ export default function TheForm() {
       }
     });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, description, image, category, tags, isVisible } = formData;
+    const { title, content, image, category, tags, published } = formData;
 
-    if (title.trim() !== "" && description.trim() !== "") {
+    if (title.trim() !== "" && content.trim() !== "") {
       try {
+        const tagIds = formData.tags.map((tagId) => parseInt(tagId, 10));
+        const postData = {
+          title,
+          content,
+          image,
+          category,
+          tags: tagIds,
+          published,
+        };
+
         const response = await axios({
           method: editingId !== null ? "put" : "post",
-          url: "http://localhost:3000/posts", // Replace with your actual API endpoint
+          url: "http://localhost:3000/posts",
           headers: {
             "Content-Type": "application/json",
           },
-          data:
-            editingId !== null
-              ? { id: editingId, ...formData }
-              : { id: uuidv4(), ...formData },
+          data: editingId !== null ? { ...postData } : postData,
         });
 
         if (response.status === 200 || response.status === 201) {
@@ -79,11 +111,11 @@ export default function TheForm() {
           setEditingId(null);
           setFormData({
             title: "",
-            description: "",
+            content: "",
             image: "",
             category: "",
             tags: [],
-            isVisible: false,
+            published: false,
           });
         } else {
           console.error("Failed to add/edit post:", response.statusText);
@@ -133,16 +165,16 @@ export default function TheForm() {
           placeholder="Inserisci Titolo Post"
         />
 
-        <label htmlFor="description">
+        <label htmlFor="content">
           {editingId !== null
             ? "Modifica Descrizione Post"
             : "Inserisci Descrizione Post"}
         </label>
         <input
-          id="description"
+          id="content"
           type="text"
-          name="description"
-          value={formData.description}
+          name="content"
+          value={formData.content}
           onChange={handleChange}
           placeholder="Inserisci Descrizione"
         />
@@ -170,41 +202,34 @@ export default function TheForm() {
           <option disabled value="">
             Seleziona una categoria
           </option>
-          <option value="categoria1">Categoria 1</option>
-          <option value="categoria2">Categoria 2</option>
-          {/* Aggiungi altre opzioni secondo le tue esigenze */}
+          {categories.map((category) => (
+            <option key={category.id} value={category.name}>
+              {category.name}
+            </option>
+          ))}
         </select>
 
         <label>Tags</label>
-        <div>
-          <input
-            type="checkbox"
-            id="tag1"
-            name="tags"
-            value="tag1"
-            checked={formData.tags.includes("tag1")}
-            onChange={handleChange}
-          />
-          <label htmlFor="tag1">Tag 1</label>
-        </div>
-        <div>
-          <input
-            type="checkbox"
-            id="tag2"
-            name="tags"
-            value="tag2"
-            checked={formData.tags.includes("tag2")}
-            onChange={handleChange}
-          />
-          <label htmlFor="tag2">Tag 2</label>
-        </div>
+        {tags.map((tag) => (
+          <div key={tag.id}>
+            <input
+              type="checkbox"
+              id={tag.id}
+              name="tags"
+              value={tag.id.toString()}
+              checked={formData.tags.includes(tag.id.toString())}
+              onChange={handleChange}
+            />
+            <label htmlFor={tag.id}>{tag.titleT}</label>
+          </div>
+        ))}
 
         <label>
           <input
             type="checkbox"
-            id="isVisible"
-            name="isVisible"
-            checked={formData.isVisible}
+            id="published"
+            name="published"
+            checked={formData.published}
             onChange={handleChange}
           />
           Pubblica
@@ -223,12 +248,14 @@ export default function TheForm() {
               <img src={article.image} alt={article.title} />
               <p>{article.content}</p>
               <p>
+                Category: {article.category ? article.category.name : "N/A"}
+              </p>
+              <p>
                 Tags:{" "}
                 {article.tags.map((tag) => (
                   <span key={tag.id}>{tag.titleT}, </span>
                 ))}
               </p>
-              Category: {article.category ? article.category.name : "N/A"}
             </li>
           ))}
         </ul>
